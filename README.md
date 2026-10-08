@@ -13,7 +13,7 @@ Home Assistant integration and Lovelace dashboard card for [Midgley](https://git
 - **5-Day ML Trend Forecasts:** Directional trajectory (`UP`, `DOWN`, `FLAT`) and confidence intervals ($/gal).
 - **Smart Fill-Up Advisor:** Actionable guidance (`🔴 FILL UP NOW` vs `🔵 WAIT TO FILL`) calculating expected savings based on your vehicle's tank size.
 - **Automations Ready:** `binary_sensor.midgley_fill_recommendation` turns `on` prior to weekend or supply-chain price surges to ping your phone before prices spike.
-- **Lovelace Custom Card:** High-contrast dashboard card (`midgley-gas-card.js`) with status pill and price differentials.
+- **Bundled Lovelace Custom Card:** High-contrast dashboard card (`custom:midgley-gas-card`) automatically served and injected into Lovelace — zero manual resource setup required.
 - **Zero-Cloud Dependency (Static CDN):** By default, runs 100% off static GitHub Pages JSON feeds with client-side spatial resolution—zero infrastructure cost or API key requirement.
 
 ---
@@ -31,9 +31,7 @@ Home Assistant integration and Lovelace dashboard card for [Midgley](https://git
 
 ## 📊 Dashboard Lovelace Card
 
-Add the card resource under **Settings** > **Dashboards** > **Resources**:
-- URL: `/local/midgley-gas-card.js`
-- Type: `JavaScript Module`
+The `midgley-gas-card` is **automatically bundled** with the integration and registered in Home Assistant on startup. Once the integration is added, you can immediately use it in your dashboard:
 
 Example Lovelace Card YAML:
 ```yaml
@@ -43,6 +41,8 @@ entity_current: sensor.midgley_current_retail_gas_price
 entity_forecast: sensor.midgley_5_day_forecast_gas_price
 entity_action: sensor.midgley_fill_up_recommendation
 ```
+
+*(Note: If using manual YAML Lovelace mode or wanting manual resource declaration, the card is served at `/midgley_frontend/midgley-gas-card.js` as a `JavaScript Module`)*.
 
 ---
 

@@ -1,7 +1,7 @@
 class MidgleyGasCard extends HTMLElement {
   setConfig(config) {
     if (!config.entity_current) {
-      throw new Error("Please specify entity_current (e.g. sensor.midgley_national_current_retail_gas_price)");
+      throw new Error("Please specify entity_current (e.g. sensor.midgley_current_retail_gas_price)");
     }
     this.config = config;
   }
@@ -18,8 +18,12 @@ class MidgleyGasCard extends HTMLElement {
     const forecastEntity = this.config.entity_forecast ? this._hass.states[this.config.entity_forecast] : null;
     const actionEntity = this.config.entity_action ? this._hass.states[this.config.entity_action] : null;
 
-    const currentPrice = currentEntity ? parseFloat(currentEntity.state).toFixed(2) : "--.--";
-    const forecastPrice = forecastEntity ? parseFloat(forecastEntity.state).toFixed(2) : null;
+    const currentPrice = (currentEntity && currentEntity.state && !isNaN(parseFloat(currentEntity.state)))
+      ? parseFloat(currentEntity.state).toFixed(2)
+      : "--.--";
+    const forecastPrice = (forecastEntity && forecastEntity.state && !isNaN(parseFloat(forecastEntity.state)))
+      ? parseFloat(forecastEntity.state).toFixed(2)
+      : null;
     const action = actionEntity ? actionEntity.state : "NEUTRAL";
 
     let badgeColor = "#4caf50";
@@ -63,11 +67,16 @@ class MidgleyGasCard extends HTMLElement {
   }
 }
 
-customElements.define("midgley-gas-card", MidgleyGasCard);
+if (!customElements.get("midgley-gas-card")) {
+  customElements.define("midgley-gas-card", MidgleyGasCard);
+}
+
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "midgley-gas-card",
-  name: "Midgley Gas Card",
-  preview: true,
-  description: "Lovelace card for Midgley retail fuel forecasts & fill recommendations",
-});
+if (!window.customCards.some(card => card.type === "midgley-gas-card")) {
+  window.customCards.push({
+    type: "midgley-gas-card",
+    name: "Midgley Gas Card",
+    preview: true,
+    description: "Lovelace card for Midgley retail fuel forecasts & fill recommendations",
+  });
+}
