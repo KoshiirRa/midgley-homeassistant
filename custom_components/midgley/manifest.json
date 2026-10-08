@@ -1,0 +1,14 @@
+{
+  "domain": "midgley",
+  "name": "Midgley Fuel Intelligence",
+  "codeowners": [
+    "@KoshiirRa"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/KoshiirRa/midgley-homeassistant",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/KoshiirRa/midgley-homeassistant/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Midgley Fuel Intelligence Setup",
+        "description": "Configure real-time retail gasoline prices and 5-day ML trend forecasts.",
+        "data": {
+          "gateway_tier": "API Gateway Tier",
+          "base_url": "Custom Gateway Base URL",
+          "locale": "Metropolitan Refining Hub / Market",
+          "tank_capacity": "Vehicle Tank Capacity (Gallons)"
+        }
+      }
+    },
+    "error": {
+      "empty_url": "Custom URL cannot be blank."
+    },
+    "abort": {
+      "already_configured": "This metropolitan market is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Midgley Settings",
+        "data": {
+          "tank_capacity": "Vehicle Tank Capacity (Gallons)"
+        }
+      }
+    }
+  }
+}
