@@ -9,8 +9,14 @@ from homeassistant.core import HomeAssistant
 from .const import (
     DOMAIN,
     CONF_BASE_URL,
+    CONF_LOCATION_MODE,
     CONF_LOCALE,
     CONF_TANK_CAPACITY,
+    CONF_ZIP_CODE,
+    CONF_LATITUDE,
+    CONF_LONGITUDE,
+    DEFAULT_LOCATION_MODE,
+    DEFAULT_LOCALE,
     DEFAULT_TANK_CAPACITY,
 )
 from .coordinator import MidgleyDataUpdateCoordinator
@@ -30,8 +36,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = MidgleyDataUpdateCoordinator(
         hass=hass,
         base_url=entry.data[CONF_BASE_URL],
-        locale=entry.data[CONF_LOCALE],
+        location_mode=entry.data.get(CONF_LOCATION_MODE, DEFAULT_LOCATION_MODE),
+        locale=entry.data.get(CONF_LOCALE, DEFAULT_LOCALE),
         tank_capacity=entry.data.get(CONF_TANK_CAPACITY, DEFAULT_TANK_CAPACITY),
+        zip_code=entry.data.get(CONF_ZIP_CODE),
+        latitude=entry.data.get(CONF_LATITUDE),
+        longitude=entry.data.get(CONF_LONGITUDE),
     )
 
     await coordinator.async_config_entry_first_refresh()

@@ -3,11 +3,15 @@
     "step": {
       "user": {
         "title": "Midgley Fuel Intelligence Setup",
-        "description": "Configure real-time retail gasoline prices and 5-day ML trend forecasts.",
+        "description": "Configure real-time retail gasoline prices and 5-day ML forecasts for your location.",
         "data": {
+          "location_mode": "Location Resolution Mode",
+          "zip_code": "5-Digit US ZIP Code (if ZIP mode selected)",
+          "latitude": "Latitude (if GPS mode selected)",
+          "longitude": "Longitude (if GPS mode selected)",
+          "locale": "Predefined Market Hub (if manual mode selected)",
           "gateway_tier": "API Gateway Tier",
           "base_url": "Custom Gateway Base URL",
-          "locale": "Metropolitan Refining Hub / Market",
           "tank_capacity": "Vehicle Tank Capacity (Gallons)"
         }
       }
@@ -16,7 +20,7 @@
       "empty_url": "Custom URL cannot be blank."
     },
     "abort": {
-      "already_configured": "This metropolitan market is already configured."
+      "already_configured": "This location is already configured in Home Assistant."
     }
   },
   "options": {

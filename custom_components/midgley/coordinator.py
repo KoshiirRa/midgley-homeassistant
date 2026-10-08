@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from datetime import datetime, timezone
 
 import aiohttp
@@ -19,7 +19,11 @@ from .const import (
     ACTION_FILL_NOW,
     ACTION_WAIT_TO_FILL,
     ACTION_NEUTRAL,
+    LOCATION_MODE_HA,
+    LOCATION_MODE_ZIP,
+    LOCATION_MODE_GPS,
 )
+from .resolver import resolve_coordinates, resolve_zip
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,34 +35,64 @@ class MidgleyDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self,
         hass: HomeAssistant,
         base_url: str,
+        location_mode: str,
         locale: str,
         tank_capacity: float,
+        zip_code: Optional[str] = None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
     ) -> None:
         """Initialize the coordinator."""
+        self.location_mode = location_mode
+        self.base_url = base_url.rstrip("/")
+        self.locale = locale
+        self.tank_capacity = tank_capacity
+        self.zip_code = zip_code
+        self.latitude = latitude
+        self.longitude = longitude
+        self._session = async_get_clientsession(hass)
+
         super().__init__(
             hass,
             _LOGGER,
             name=f"{DOMAIN}_{locale}",
             update_interval=DEFAULT_SCAN_INTERVAL,
         )
-        self.base_url = base_url.rstrip("/")
-        self.locale = locale
-        self.tank_capacity = tank_capacity
-        self._session = async_get_clientsession(hass)
 
     async def _async_update_data(self) -> Dict[str, Any]:
-        """Fetch data from Midgley API or CDN feed."""
+        """Fetch data from Midgley API or CDN feed with freeform location support."""
         is_static_cdn = any(
             host in self.base_url
             for host in ("github.io", "github.com", "raw.githubusercontent.com")
         )
 
+        resolved_meta: Dict[str, Any] = {}
+        target_locale = self.locale
+
+        # 1. Resolve freeform location if applicable
+        if self.location_mode in (LOCATION_MODE_HA, LOCATION_MODE_GPS) and self.latitude is not None and self.longitude is not None:
+            resolved_meta = resolve_coordinates(self.latitude, self.longitude)
+            if is_static_cdn:
+                target_locale = resolved_meta.get("locale_code", "national")
+        elif self.location_mode == LOCATION_MODE_ZIP and self.zip_code:
+            resolved_meta = resolve_zip(self.zip_code)
+            if is_static_cdn:
+                target_locale = resolved_meta.get("locale_code", "national")
+
+        # 2. Build Request URL & Params
         if is_static_cdn:
-            url = f"{self.base_url}/api/v1/combined_{self.locale}.json"
+            url = f"{self.base_url}/api/v1/combined_{target_locale}.json"
             params = None
         else:
             url = f"{self.base_url}/api/v1/combined"
-            params = {"locale": self.locale}
+            params = {}
+            if self.location_mode in (LOCATION_MODE_HA, LOCATION_MODE_GPS) and self.latitude is not None and self.longitude is not None:
+                params["lat"] = str(self.latitude)
+                params["lon"] = str(self.longitude)
+            elif self.location_mode == LOCATION_MODE_ZIP and self.zip_code:
+                params["zip_code"] = str(self.zip_code)
+            else:
+                params["locale"] = target_locale
 
         try:
             async with self._session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
@@ -71,10 +105,14 @@ class MidgleyDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return self.data
             raise UpdateFailed(f"Error communicating with Midgley API: {err}") from err
 
-        # Process and enrich payload
+        # Process payload
         live = data.get("live_lookup", {})
         forecast = data.get("forecast", {})
         locale_meta = data.get("locale", {})
+        server_res = data.get("location_resolution") or data.get("zip_code_resolution")
+
+        if server_res:
+            resolved_meta.update(server_res)
 
         current_price = live.get("current_price_per_gal")
         predicted_price = forecast.get("predicted_price_per_gal", current_price)
@@ -82,10 +120,6 @@ class MidgleyDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         expected_pct = forecast.get("expected_change_percent", 0.0)
         direction = forecast.get("projected_direction", DIRECTION_FLAT)
 
-        # Smart Fill-Up Advisor Rule:
-        # If price projected to surge (+2.5% or >$0.08) -> FILL_UP_NOW
-        # If price projected to drop (-2.0% or <-$0.06) -> WAIT_TO_FILL
-        # Otherwise -> NEUTRAL
         if expected_pct >= 2.5 or expected_change >= 0.08 or direction == DIRECTION_UP:
             action = ACTION_FILL_NOW
             should_fill = True
@@ -98,9 +132,17 @@ class MidgleyDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
         potential_savings = abs(expected_change * self.tank_capacity)
 
+        # Friendly display name
+        display_name = locale_meta.get("name", target_locale.capitalize())
+        if resolved_meta.get("distance_miles") is not None:
+            dist = resolved_meta["distance_miles"]
+            display_name = f"{display_name} ({dist} mi away)"
+
         return {
             "raw": data,
             "locale": locale_meta,
+            "resolved_meta": resolved_meta,
+            "display_name": display_name,
             "current_price": current_price,
             "predicted_price_5d": predicted_price,
             "expected_change": round(expected_change, 3),

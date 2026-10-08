@@ -5,8 +5,17 @@ DOMAIN = "midgley"
 
 CONF_GATEWAY_TIER = "gateway_tier"
 CONF_BASE_URL = "base_url"
+CONF_LOCATION_MODE = "location_mode"
 CONF_LOCALE = "locale"
+CONF_ZIP_CODE = "zip_code"
+CONF_LATITUDE = "latitude"
+CONF_LONGITUDE = "longitude"
 CONF_TANK_CAPACITY = "tank_capacity"
+
+LOCATION_MODE_HA = "home_assistant"
+LOCATION_MODE_ZIP = "zip_code"
+LOCATION_MODE_GPS = "gps_coordinates"
+LOCATION_MODE_METRO = "predefined_metro"
 
 TIER_PRODUCTION = "production"
 TIER_DWARVENBARD = "dwarvenbard"
@@ -20,6 +29,7 @@ GATEWAY_URLS = {
 }
 
 DEFAULT_GATEWAY_TIER = TIER_PRODUCTION
+DEFAULT_LOCATION_MODE = LOCATION_MODE_HA
 DEFAULT_LOCALE = "national"
 DEFAULT_TANK_CAPACITY = 15.0
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)

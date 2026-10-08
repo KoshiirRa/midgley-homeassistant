@@ -1,7 +1,7 @@
 """Sensor platform for Midgley Fuel Intelligence."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
@@ -82,7 +82,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up Midgley sensor entities."""
     coordinator: MidgleyDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    locale = entry.data[CONF_LOCALE]
+    locale = entry.data.get(CONF_LOCALE, "national")
 
     entities = [
         MidgleySensor(coordinator, entry, description, locale)
@@ -106,20 +106,19 @@ class MidgleySensor(CoordinatorEntity[MidgleyDataUpdateCoordinator], SensorEntit
         super().__init__(coordinator)
         self.entity_description = description
         self._locale = locale
-        self._attr_unique_id = f"{DOMAIN}_{locale}_{description.key}"
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{description.key}"
         self._attr_has_entity_name = True
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        locale_info = self.coordinator.data.get("locale", {})
-        locale_name = locale_info.get("name", self._locale.capitalize())
+        disp_name = self.coordinator.data.get("display_name", self._locale.capitalize())
         return DeviceInfo(
-            identifiers={(DOMAIN, self._locale)},
-            name=f"Midgley Fuel Intelligence ({locale_name})",
+            identifiers={(DOMAIN, self.coordinator.config_entry.entry_id if hasattr(self.coordinator, 'config_entry') and self.coordinator.config_entry else self._locale)},
+            name=f"Midgley Fuel Intelligence ({disp_name})",
             manufacturer="Midgley Forecasting Engine",
             model=self.coordinator.data.get("model_version", "v1.6 Ipatieff"),
-            sw_version="0.1.0",
+            sw_version="0.2.0",
         )
 
     @property
@@ -134,6 +133,7 @@ class MidgleySensor(CoordinatorEntity[MidgleyDataUpdateCoordinator], SensorEntit
             "locale": self._locale,
             "target_date": self.coordinator.data.get("target_date"),
             "model_version": self.coordinator.data.get("model_version"),
+            "resolved_location": self.coordinator.data.get("resolved_meta"),
         }
         if self.entity_description.key == "predicted_price_5d":
             attrs["day_1_price"] = self.coordinator.data.get("day_1_price")

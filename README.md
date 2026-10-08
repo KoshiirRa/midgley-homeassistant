@@ -9,12 +9,12 @@ Home Assistant integration and Lovelace dashboard card for [Midgley](https://git
 
 ## ✨ Features
 
-- **Real-Time Regional Retail Prices:** Live pump prices for your metropolitan area (Tulsa, Cincinnati, Oakland, Newark, Charlotte, Greenville, Port St. Lucie, SF Bay Area, or National US).
+- **Freeform Location & Auto GPS Resolution:** Automatically uses your Home Assistant home coordinates (`latitude`, `longitude`) or any 5-digit US ZIP code to resolve to the nearest refining hub and PADD market.
 - **5-Day ML Trend Forecasts:** Directional trajectory (`UP`, `DOWN`, `FLAT`) and confidence intervals ($/gal).
 - **Smart Fill-Up Advisor:** Actionable guidance (`🔴 FILL UP NOW` vs `🔵 WAIT TO FILL`) calculating expected savings based on your vehicle's tank size.
 - **Automations Ready:** `binary_sensor.midgley_fill_recommendation` turns `on` prior to weekend or supply-chain price surges to ping your phone before prices spike.
 - **Lovelace Custom Card:** High-contrast dashboard card (`midgley-gas-card.js`) with status pill and price differentials.
-- **Zero-Cloud Dependency (Static CDN):** By default, runs 100% off static GitHub Pages JSON feeds with zero infrastructure cost or API key requirement.
+- **Zero-Cloud Dependency (Static CDN):** By default, runs 100% off static GitHub Pages JSON feeds with client-side spatial resolution—zero infrastructure cost or API key requirement.
 
 ---
 
@@ -25,6 +25,7 @@ Home Assistant integration and Lovelace dashboard card for [Midgley](https://git
 3. Add repository URL: `https://github.com/KoshiirRa/midgley-homeassistant` with category **Integration**.
 4. Click **Download**, then restart Home Assistant.
 5. In **Settings** > **Devices & Services**, click **Add Integration** and search for **Midgley Fuel Intelligence**.
+6. The setup flow will automatically detect your Home Assistant coordinates!
 
 ---
 
@@ -37,10 +38,10 @@ Add the card resource under **Settings** > **Dashboards** > **Resources**:
 Example Lovelace Card YAML:
 ```yaml
 type: custom:midgley-gas-card
-title: Tulsa Gas Advisor
-entity_current: sensor.midgley_tulsa_current_retail_gas_price
-entity_forecast: sensor.midgley_tulsa_5_day_forecast_gas_price
-entity_action: sensor.midgley_tulsa_fill_up_recommendation
+title: Local Gas Advisor
+entity_current: sensor.midgley_current_retail_gas_price
+entity_forecast: sensor.midgley_5_day_forecast_gas_price
+entity_action: sensor.midgley_fill_up_recommendation
 ```
 
 ---
@@ -54,7 +55,7 @@ alias: "Midgley: Alert to Fill Gas Tank Before Surge"
 description: "Alerts drivers when fuel prices are predicted to rise sharply."
 trigger:
   - platform: state
-    entity_id: binary_sensor.midgley_tulsa_fill_tank_advisory_alert
+    entity_id: binary_sensor.midgley_fill_tank_advisory_alert
     to: "on"
 action:
   - service: notify.notify
@@ -62,7 +63,7 @@ action:
       title: "⛽ Gas Price Surge Warning"
       message: >
         Gas prices are projected to rise in the next 48 hours. Fill up today to save approximately
-        ${{ states('sensor.midgley_tulsa_potential_fill_up_savings') }} on a full tank.
+        ${{ states('sensor.midgley_potential_fill_up_savings') }} on a full tank.
 ```
 
 ---
